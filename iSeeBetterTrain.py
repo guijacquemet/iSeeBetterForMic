@@ -186,6 +186,8 @@ def saveModelParams(epoch, runningResults, netG, netD):
 
     if epoch % 1 == 0 and epoch != 0:
         out_path = 'statistics/'
+        if not os.path.isdir(out_path):
+            os.mkdir(out_path)
         data_frame = pd.DataFrame(data={'DLoss': results['DLoss'], 'GLoss': results['GLoss'], 'DScore': results['DScore'],
                                   'GScore': results['GScore']},#, 'PSNR': results['PSNR'], 'SSIM': results['SSIM']},
                                   index=range(1, epoch + 1))
