@@ -166,15 +166,17 @@ def trainModel(epoch, training_data_loader, netG, netD, optimizerD, optimizerG, 
 
     return runningResults
 
-def saveModelParams(epoch, runningResults, netG, netD):
+def saveModelParams(epoch, runningResults, netG, netD, save_folder="weights/"):
     results = {'DLoss': [], 'GLoss': [], 'DScore': [], 'GScore': [], 'PSNR': [], 'SSIM': []}
 
     # Save model parameters
-    torch.save(netG.state_dict(), 'weights/netG_epoch_%d_%d.pth' % (UPSCALE_FACTOR, epoch))
-    torch.save(netD.state_dict(), 'weights/netD_epoch_%d_%d.pth' % (UPSCALE_FACTOR, epoch))
+    save_path_G = os.path.join(save_folder, f"netG_epoch_{UPSCALE_FACTOR}_{epoch}.pth")
+    save_path_D = os.path.join(save_folder, f"netD_epoch_{UPSCALE_FACTOR}_{epoch}.pth")
+    torch.save(netG.state_dict(), save_path_G)
+    torch.save(netD.state_dict(), save_path_D)
 
-    logger.info("Checkpoint saved to {}".format('weights/netG_epoch_%d_%d.pth' % (UPSCALE_FACTOR, epoch)))
-    logger.info("Checkpoint saved to {}".format('weights/netD_epoch_%d_%d.pth' % (UPSCALE_FACTOR, epoch)))
+    logger.info("Checkpoint saved to {}".format(save_path_G))
+    logger.info("Checkpoint saved to {}".format(save_path_D))
 
     # Save Loss\Scores\PSNR\SSIM
     results['DLoss'].append(runningResults['DLoss'] / runningResults['batchSize'])
@@ -260,7 +262,7 @@ def main():
         runningResults = trainModel(epoch, training_data_loader, netG, netD, optimizerD, optimizerG, generatorCriterion, device, args)
 
         if (epoch + 1) % (args.snapshots) == 0:
-            saveModelParams(epoch, runningResults, netG, netD)
+            saveModelParams(epoch, runningResults, netG, netD, args.save_folder)
 
 if __name__ == "__main__":
     main()
