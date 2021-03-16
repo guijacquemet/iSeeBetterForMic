@@ -47,6 +47,7 @@ parser.add_argument('--save_folder', default='weights/', help='Location to save 
 parser.add_argument('--prefix', default='F7', help='Location to save checkpoint models')
 parser.add_argument('--APITLoss', action='store_true', help='Use APIT Loss')
 parser.add_argument('--useDataParallel', action='store_true', help='Use DataParallel')
+parser.add_argument('--grayscale', default=False, action='store_true', help='Tain on grayscale/single-channel data')
 parser.add_argument('-v', '--debug', default=False, action='store_true', help='Print debug spew.')
 
 def trainModel(epoch, training_data_loader, netG, netD, optimizerD, optimizerG, generatorCriterion, device, args):
@@ -212,7 +213,8 @@ def main():
                                       shuffle=True)
 
     # Use generator as RBPN
-    netG = RBPN(num_channels=3, base_filter=256, feat=64, num_stages=3, n_resblock=5, nFrames=args.nFrames,
+    channels = 1 if args.grayscale else 3
+    netG = RBPN(num_channels=channels, base_filter=256, feat=64, num_stages=3, n_resblock=5, nFrames=args.nFrames,
                 scale_factor=args.upscale_factor)
     logger.info('# of Generator parameters: %s', sum(param.numel() for param in netG.parameters()))
 
@@ -222,7 +224,7 @@ def main():
         netG = torch.nn.DataParallel(netG, device_ids=gpus_list)
 
     # Use discriminator from SRGAN
-    netD = Discriminator()
+    netD = Discriminator(num_channels=channels)
     logger.info('# of Discriminator parameters: %s', sum(param.numel() for param in netD.parameters()))
 
     # Generator loss
