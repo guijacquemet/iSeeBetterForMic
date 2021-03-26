@@ -106,17 +106,11 @@ def trainModel(epoch, training_data_loader, netG, netD, optimizerD, optimizerG, 
         fakeScrs.append(fakeOut)
         realScrs.append(realOut)
 
-        if args.debug:
-            print(f"Real out: {realOut}")
-            print(f"Fake out: {fakeOut}")
-            print(f"Loss before: {DLoss}")
         DLoss += 1 - realOut + fakeOut
-        if args.debug:
-            print(f"DLoss before division: {DLoss}")
-            print(f"Data len: {len(data)}")
         DLoss /= len(data)
-        if args.debug:
-            print(f"DLoss after: {DLoss}")
+
+        if any(DLoss != DLoss): # Checks for NaN values (due to the way fp arithmetic works NaN != Nan)
+            raise ValueError("NaN loss: Consider lowering the learning rate")
 
         # Calculate gradients
         DLoss.backward(retain_graph=True)
