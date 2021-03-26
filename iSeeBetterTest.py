@@ -13,6 +13,7 @@ import time
 import cv2
 import math
 import logger
+import tifffile as tiff
 
 # Training settings
 parser = argparse.ArgumentParser(description='PyTorch Super Res Example')
@@ -36,6 +37,7 @@ parser.add_argument('--nFrames', type=int, default=7, help="")
 parser.add_argument('--model_type', type=str, default="RBPN", help="")
 parser.add_argument('-d', '--debug', action='store_true', required=False, help="Print debug spew.")
 parser.add_argument('-u', '--upscale_only', action='store_true', required=False, help="Upscale mode - without downscaling.")
+parser.add_argument('--grayscale', action='store_true', default=False)
 
 args = parser.parse_args()
 
@@ -58,7 +60,8 @@ testing_data_loader = DataLoader(dataset=test_set, num_workers=args.threads, bat
 
 print('==> Building model ', args.model_type)
 if args.model_type == 'RBPN':
-    model = RBPN(num_channels=3, base_filter=256,  feat = 64, num_stages=3, n_resblock=5, nFrames=args.nFrames, scale_factor=args.upscale_factor)
+    nc = 1 if args.grayscale else 3
+    model = RBPN(num_channels=nc, base_filter=256,  feat = 64, num_stages=3, n_resblock=5, nFrames=args.nFrames, scale_factor=args.upscale_factor)
 
 if cuda:
     model = torch.nn.DataParallel(model, device_ids=gpus_list)
@@ -86,7 +89,7 @@ def eval():
         avg_psnr_predicted = 0.0
     for batch in testing_data_loader:
         input, target, neigbor, flow, bicubic = batch[0], batch[1], batch[2], batch[3], batch[4]
-        
+
         with torch.no_grad():
             if cuda:
                 input = Variable(input).cuda(gpus_list[0])
@@ -106,19 +109,19 @@ def eval():
         else:
             with torch.no_grad():
                 prediction = model(input, neigbor, flow)
-        
+
         if args.residual:
             prediction = prediction + bicubic
-            
+
         t1 = time.time()
         print("==> Processing: %s || Timer: %.4f sec." % (str(count), (t1 - t0)))
-        save_img(prediction.cpu().data, str(count), True)
-        save_img(target, str(count), False)
-        
+        save_img(prediction.cpu().data, str(count), True, args)
+        save_img(target, str(count), False, args)
+
         prediction = prediction.cpu()
         prediction = prediction.data[0].numpy().astype(np.float32)
         prediction = prediction*255.
-        
+
         target = target.squeeze().numpy().astype(np.float32)
         target = target*255.
         if not upscale_only:
@@ -126,23 +129,31 @@ def eval():
             print("PSNR Predicted = ", psnr_predicted)
             avg_psnr_predicted += psnr_predicted
         count += 1
-        
+
     if not upscale_only:  # Otherwise the print will error on '-u'
         print("Avg PSNR Predicted = ", avg_psnr_predicted/count)
 
-def save_img(img, img_name, pred_flag):
-    save_img = img.squeeze().clamp(0, 1).numpy().transpose(1,2,0)
+def save_img(img, img_name, pred_flag, args):
+    if args.grayscale:
+        save_img = img.numpy()
+    else:
+        save_img = img.squeeze().clamp(0, 1).numpy().transpose(1,2,0)
 
     # save img
     save_dir=os.path.join(args.output, args.data_dir, os.path.splitext(args.file_list)[0]+'_'+str(args.upscale_factor)+'x')
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
-        
+
+    filetype = ".tiff" if args.grayscale else ".png"
     if pred_flag:
-        save_fn = save_dir +'/'+ img_name+'_'+args.model_type+'F'+str(args.nFrames)+'.png'
+        save_fn = save_dir +'/'+ img_name+'_'+args.model_type+'F'+str(args.nFrames)+filetype
     else:
-        save_fn = save_dir +'/'+ img_name+'.png'
-    cv2.imwrite(save_fn, cv2.cvtColor(save_img*255, cv2.COLOR_BGR2RGB),  [cv2.IMWRITE_PNG_COMPRESSION, 0])
+        save_fn = save_dir +'/'+ img_name+filetype
+
+    if args.grayscale:
+        tiff.imwrite(save_fn, save_img)
+    else:
+        cv2.imwrite(save_fn, cv2.cvtColor(save_img*255, cv2.COLOR_BGR2RGB),  [cv2.IMWRITE_PNG_COMPRESSION, 0])
 
 def PSNR(pred, gt, shave_border=0):
     height, width = pred.shape[1:3]
@@ -153,7 +164,7 @@ def PSNR(pred, gt, shave_border=0):
     if rmse == 0:
         return 100
     return 20 * math.log10(255.0 / rmse)
-    
+
 def chop_forward(x, neigbor, flow, model, scale, shave=8, min_size=2000, nGPUs=args.gpus):
     b, c, h, w = x.size()
     h_half, w_half = h // 2, w // 2
