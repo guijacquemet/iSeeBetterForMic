@@ -109,7 +109,7 @@ def trainModel(epoch, training_data_loader, netG, netD, optimizerD, optimizerG, 
         DLoss += 1 - realOut + fakeOut
         DLoss /= len(data)
 
-        if any(DLoss != DLoss): # Checks for NaN values (due to the way fp arithmetic works NaN != Nan)
+        if DLoss != DLoss: # Checks for NaN values (due to the way fp arithmetic works NaN != Nan)
             raise ValueError("NaN loss: Consider lowering the learning rate")
 
         # Calculate gradients
