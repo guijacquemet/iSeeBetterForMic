@@ -140,7 +140,7 @@ def save_img(img, img_name, pred_flag, args):
         save_img = img.squeeze().clamp(0, 1).numpy().transpose(1,2,0)
 
     # save img
-    save_dir=os.path.join(args.output, args.data_dir, os.path.splitext(args.file_list)[0]+'_'+str(args.upscale_factor)+'x')
+    save_dir=os.path.join(args.output, os.path.splitext(args.file_list)[0]+'_'+str(args.upscale_factor)+'x')
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
