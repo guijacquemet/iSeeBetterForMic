@@ -136,6 +136,9 @@ def eval():
 def save_img(img, img_name, pred_flag, args):
     if args.grayscale:
         save_img = img.numpy()
+        if len(save_img.shape) != 2:
+            # if the array is of the shape (1,1,x,y) reshape to (x,y)
+            save_img = save_img.reshape(tuple([dim for dim in save_img.shape if dim != 1]))
     else:
         save_img = img.squeeze().clamp(0, 1).numpy().transpose(1,2,0)
 
