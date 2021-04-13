@@ -214,6 +214,10 @@ def main():
     training_data_loader = DataLoader(dataset=train_set, num_workers=args.threads, batch_size=args.batchSize,
                                       shuffle=True)
 
+    # Set Upscale factor
+    global UPSCALE_FACTOR
+    UPSCALE_FACTOR = args.upscale_factor
+
     # Use generator as RBPN
     channels = 1 if args.grayscale else 3
     netG = RBPN(num_channels=channels, base_filter=256, feat=64, num_stages=3, n_resblock=5, nFrames=args.nFrames,
