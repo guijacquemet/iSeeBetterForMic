@@ -190,7 +190,7 @@ def saveModelParams(epoch, runningResults, netG, netD, save_folder="weights/"):
     #results['SSIM'].append(validationResults['SSIM'])
 
     if epoch % 1 == 0 and epoch != 0:
-        out_path = 'statistics/'
+        out_path = os.path.join(save_folder ,'statistics/')
         if not os.path.isdir(out_path):
             os.mkdir(out_path)
         data_frame = pd.DataFrame(data={'DLoss': results['DLoss'], 'GLoss': results['GLoss'], 'DScore': results['DScore'],
