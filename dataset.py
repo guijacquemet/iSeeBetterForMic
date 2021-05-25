@@ -27,6 +27,8 @@ def open_image(filepath):
     image = Image.open(filepath)
     if filepath.endswith(".png"):
         return image.convert('RGB')
+    elif ".tif" in filepath:
+        return image.convert('F')
     return image
 
 def load_img(filepath, nFrames, scale, other_dataset, upscale_only):
