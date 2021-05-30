@@ -17,6 +17,7 @@ import utils
 
 ################################################## iSEEBETTER TRAINER KNOBS ############################################
 UPSCALE_FACTOR = 4
+N_FRAMES = 7
 ########################################################################################################################
 
 # Handle command line arguments
@@ -173,8 +174,8 @@ def saveModelParams(epoch, runningResults, netG, netD, save_folder="weights/"):
     results = {'DLoss': [], 'GLoss': [], 'DScore': [], 'GScore': [], 'PSNR': [], 'SSIM': []}
 
     # Save model parameters
-    save_path_G = os.path.join(save_folder, f"netG_epoch_{UPSCALE_FACTOR}_{epoch}.pth")
-    save_path_D = os.path.join(save_folder, f"netD_epoch_{UPSCALE_FACTOR}_{epoch}.pth")
+    save_path_G = os.path.join(save_folder, f"netG_epoch_F{N_FRAMES}_{UPSCALE_FACTOR}_{epoch}.pth")
+    save_path_D = os.path.join(save_folder, f"netD_epoch_F{N_FRAMES}_{UPSCALE_FACTOR}_{epoch}.pth")
     torch.save(netG.state_dict(), save_path_G)
     torch.save(netD.state_dict(), save_path_D)
 
@@ -217,6 +218,10 @@ def main():
     # Set Upscale factor
     global UPSCALE_FACTOR
     UPSCALE_FACTOR = args.upscale_factor
+
+    # Set number of frames
+    global N_FRAMES
+    N_FRAMES = args.nFrames
 
     # Use generator as RBPN
     channels = 1 if args.grayscale else 3
